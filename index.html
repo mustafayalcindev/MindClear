@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Yok Et / Yaşat</title>
+<meta name="description" content="Seni yoran bir düşünceyi yaz ve yok et, ya da değer verdiğin bir şeyi yaz ve yaşat. Karanlık temalı, sessiz bir ritüel uygulaması." />
+<meta name="theme-color" content="#0b0a09" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0a09'/%3E%3Cpath d='M16 6 L11 16 L15 16 L13 26 L22 14 L17 14 Z' fill='%23ff5b3e'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a09;
+    --bg-soft:#131110;
+    --ink:#ece6da;
+    --ash:#726a5f;
+    --ash-dim:#4a443c;
+    --ember:#d1442f;
+    --ember-bright:#ff5b3e;
+    --ember-dim:#5a1f16;
+    --flame:#ff8a3d;
+    --flame-core:#ffd166;
+    --void:#1c1330;
+    --void-glow:#8b5cf6;
+    --life:#7bd88f;
+    --life-bright:#a6f2b3;
+    --life-dim:#264a2d;
+    --life-glow:#7bd88f;
+    --clicks:0;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--ink);
+    font-family:'Inter',sans-serif;
+    overflow-y:auto; overflow-x:hidden;
+  }
+
+  #vignette{
+    position:fixed; inset:0; pointer-events:none;
+    background:radial-gradient(ellipse at center, transparent 30%, var(--ember-dim) 150%);
+    opacity:calc(var(--clicks) * 0.11);
+    transition:opacity 220ms ease-out;
+    z-index:1;
+  }
+
+  #grain{
+    position:fixed; inset:0; pointer-events:none; opacity:0.035; z-index:2;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  #topbar{
+    position:fixed; top:0; left:0; right:0; z-index:5;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:16px 24px 10px;
+    background:linear-gradient(to bottom, rgba(11,10,9,0.92), rgba(11,10,9,0));
+    pointer-events:none;
+  }
+  #topbar > *{ pointer-events:auto; }
+
+  .brand{ display:flex; align-items:center; gap:10px; }
+  .brand svg{ display:block; flex-shrink:0; }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.2; }
+  .brand-name{ font-size:13px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--ink); }
+  .brand-tagline{ font-size:11px; color:var(--ash); letter-spacing:0.02em; }
+
+  #soundToggle{
+    background:none; border:1px solid var(--ash-dim); border-radius:50%;
+    width:36px; height:36px; display:flex; align-items:center; justify-content:center;
+    color:var(--ash); cursor:pointer;
+    transition:border-color 200ms ease, color 200ms ease;
+  }
+  #soundToggle:hover{ border-color:var(--ember); color:var(--ember-bright); }
+  #soundToggle svg{ width:16px; height:16px; }
+
+  :focus-visible{ outline:2px solid var(--ember); outline-offset:3px; }
+
+  #bottomNav{
+    position:fixed; left:0; right:0; bottom:0; z-index:5;
+    display:flex; justify-content:center; gap:6px;
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    background:rgba(19,17,16,0.86);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    border-top:1px solid var(--ash-dim);
+  }
+  .tab-btn{
+    flex:1; max-width:180px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    background:none; border:none;
+    padding:6px 10px;
+    color:var(--ash);
+    font-family:'Inter',sans-serif;
+    font-size:11px; letter-spacing:0.03em; font-weight:600;
+    cursor:pointer;
+    border-radius:12px;
+    transition:color 200ms ease, background 200ms ease;
+  }
+  .tab-btn svg{ width:21px; height:21px; }
+  .tab-btn:hover{ background:rgba(255,255,255,0.03); }
+  .tab-btn.active[data-panel="destroy"]{ color:var(--ember-bright); }
+  .tab-btn.active[data-panel="nurture"]{ color:var(--life-bright); }
+
+  #appShake{ height:100%; }
+  @keyframes screenShake{
+    0%{ transform:translate(0,0) rotate(0); }
+    20%{ transform:translate(-6px,3px) rotate(-0.3deg); }
+    40%{ transform:translate(5px,-4px) rotate(0.3deg); }
+    60%{ transform:translate(-4px,2px) rotate(-0.2deg); }
+    80%{ transform:translate(3px,-2px) rotate(0.2deg); }
+    100%{ transform:translate(0,0) rotate(0); }
+  }
+  @keyframes screenShakeStrong{
+    0%{ transform:translate(0,0) rotate(0); }
+    15%{ transform:translate(-10px,5px) rotate(-0.6deg); }
+    35%{ transform:translate(9px,-7px) rotate(0.6deg); }
+    55%{ transform:translate(-8px,4px) rotate(-0.4deg); }
+    75%{ transform:translate(6px,-4px) rotate(0.4deg); }
+    100%{ transform:translate(0,0) rotate(0); }
+  }
+  .shake-screen{ animation:screenShake 260ms ease; }
+  .shake-screen.strong{ animation-name:screenShakeStrong; animation-duration:320ms; }
+
+  main{
+    position:relative; z-index:3; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    padding:104px 24px calc(96px + env(safe-area-inset-bottom, 0px));
+    min-height:100%;
+  }
+
+  .panel{ display:none; width:100%; flex-direction:column; align-items:center; gap:28px; }
+  .panel.active{ display:flex; }
+
+  /* --- shared entry / hidden pattern --- */
+  .entry-block{
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+    transition:opacity 400ms ease, filter 400ms ease, transform 400ms ease;
+  }
+  .entry-block.hidden{
+    opacity:0; filter:blur(6px); transform:translateY(-12px) scale(0.98);
+    pointer-events:none; position:absolute;
+  }
+
+  textarea.app-textarea{
+    background:var(--bg-soft);
+    border:1px solid var(--ash-dim);
+    border-radius:14px;
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:18px; font-weight:500; line-height:1.55;
+    text-align:center;
+    padding:22px 26px;
+    width:min(82vw,540px);
+    min-height:150px;
+    resize:none;
+    outline:none;
+    transition:border-color 200ms ease, box-shadow 200ms ease;
+  }
+  textarea.app-textarea::placeholder{ color:var(--ash); }
+  textarea.app-textarea:focus{ border-color:var(--ember); box-shadow:0 0 0 3px rgba(209,68,47,0.12); }
+  #nurtureInput:focus{ border-color:var(--life); box-shadow:0 0 0 3px rgba(123,216,143,0.14); }
+
+  .char-count{ font-size:11px; letter-spacing:0.06em; color:var(--ash-dim); margin-top:-10px; transition:color 200ms ease; }
+  .char-count.limit{ color:var(--ember-bright); }
+
+  .onboarding-hint{ font-size:12px; color:var(--ash-dim); max-width:360px; text-align:center; line-height:1.5; margin-top:-6px; }
+
+  #sessionStat{
+    position:fixed; bottom:calc(80px + env(safe-area-inset-bottom, 0px)); left:0; right:0;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    font-size:11px; letter-spacing:0.04em; color:var(--ash-dim); z-index:3;
+    opacity:0; transition:opacity 400ms ease;
+    pointer-events:none;
+  }
+  #sessionStat.show{ opacity:1; pointer-events:auto; }
+  #cardBtn{ width:26px; height:26px; }
+  #cardBtn svg{ width:13px; height:13px; }
+
+  .suggestion-row{
+    display:flex; flex-wrap:wrap; gap:6px; justify-content:center;
+    max-width:400px;
+  }
+  .suggestion-chip{
+    background:none;
+    border:1px solid var(--ash-dim);
+    color:var(--ash);
+    font-family:'Inter',sans-serif;
+    font-size:11px;
+    padding:6px 12px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:border-color 200ms ease, color 200ms ease;
+  }
+  .suggestion-chip:hover{ border-color:var(--ember); color:var(--ink); }
+  #panelNurture .suggestion-chip:hover{ border-color:var(--life); color:var(--ink); }
+
+  .app-btn{
+    background:none;
+    border:1px solid var(--ash-dim);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    font-size:13px; letter-spacing:0.02em; font-weight:600;
+    padding:14px 30px; border-radius:12px; cursor:pointer;
+    max-width:min(84vw, 340px);
+    text-align:center;
+    transition:border-color 200ms ease, color 200ms ease, background 200ms ease, transform 120ms ease;
+  }
+  .app-btn:hover:not(:disabled){ border-color:var(--ember); color:var(--ember-bright); }
+  .app-btn:active:not(:disabled){ transform:scale(0.97); }
+  .app-btn:disabled{ opacity:0.35; cursor:default; }
+  #nurtureBtn:hover:not(:disabled){ border-color:var(--life); color:var(--life-bright); }
+
+  /* --- destroy stage / word --- */
+  #stage{ position:relative; display:flex; align-items:center; justify-content:center; min-height:160px; }
+
+  #wordText{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(34px, 9vw, 96px);
+    line-height:1.08;
+    color:var(--ink);
+    text-align:center;
+    cursor:pointer;
+    user-select:none; -webkit-user-select:none; touch-action:none;
+    padding:0 6px;
+    display:inline-block;
+    max-width:min(88vw, 900px);
+    white-space:pre-wrap; word-break:break-word;
+    transform:scale(0.85); opacity:0; filter:blur(8px);
+    transition:transform 480ms cubic-bezier(.2,.8,.3,1.2),
+               opacity 420ms ease, filter 300ms ease, color 300ms ease, text-shadow 300ms ease;
+  }
+  #wordText.materialize{ transform:scale(1); opacity:1; filter:blur(0); }
+
+  #stage[data-tool="balyoz"].armed #wordText{
+    color:color-mix(in srgb, var(--ink) calc(100% - (var(--clicks) * 8%)), var(--ember-bright) calc(var(--clicks) * 8%));
+    text-shadow:0 0 calc(var(--clicks) * 6px) var(--ember);
+  }
+
+  @keyframes shake{
+    0%{ transform:translate(0,0) rotate(0); }
+    20%{ transform:translate(-4px,2px) rotate(-1.2deg); }
+    40%{ transform:translate(3px,-3px) rotate(1deg); }
+    60%{ transform:translate(-3px,-1px) rotate(-0.6deg); }
+    80%{ transform:translate(4px,2px) rotate(1deg); }
+    100%{ transform:translate(0,0) rotate(0); }
+  }
+  #wordText.shake{ animation:shake 260ms ease; }
+
+  #cracks{ position:absolute; pointer-events:none; overflow:visible; }
+  #cracks path{
+    fill:none; stroke:var(--ember-bright); stroke-width:0.8; stroke-linecap:round;
+    opacity:0; filter:drop-shadow(0 0 2px var(--ember)); transition:opacity 200ms ease;
+  }
+
+  #flames{ position:absolute; pointer-events:none; display:none; }
+  .flame{
+    position:absolute; width:22px; height:32px;
+    border-radius:50% 50% 50% 50% / 60% 60% 40% 40%;
+    background:radial-gradient(circle at 50% 75%, var(--flame-core), var(--flame) 55%, transparent 78%);
+    filter:blur(1px) drop-shadow(0 0 8px var(--flame));
+    opacity:var(--burn, 0);
+    animation:flicker 0.4s ease-in-out infinite alternate;
+  }
+  .flame.tl{ top:-14px; left:-6px; animation-delay:0s; }
+  .flame.tr{ top:-14px; right:-6px; animation-delay:0.13s; }
+  .flame.bl{ bottom:-14px; left:-6px; animation-delay:0.22s; }
+  .flame.br{ bottom:-14px; right:-6px; animation-delay:0.07s; }
+  @keyframes flicker{ 0%{ transform:scale(0.85,0.95) rotate(-4deg); } 100%{ transform:scale(1.08,1.18) rotate(4deg); } }
+
+  .flame-spark{
+    position:fixed; top:0; left:0;
+    width:var(--fs-size); height:var(--fs-size);
+    border-radius:50%;
+    background:radial-gradient(circle, var(--flame-core), var(--flame) 55%, transparent 80%);
+    filter:blur(0.5px);
+    opacity:1;
+    transform:translate(var(--fs-x0),var(--fs-y0)) scale(1);
+    transition:transform var(--fs-dur) ease-out, opacity var(--fs-dur) ease-in;
+    pointer-events:none;
+    z-index:4;
+  }
+  .flame-spark.fly{ transform:translate(var(--fs-x1),var(--fs-y1)) scale(0.25); opacity:0; }
+
+  #singularity{
+    position:absolute; width:20px; height:20px; border-radius:50%;
+    background:radial-gradient(circle, #000 0%, var(--void) 42%, transparent 72%);
+    box-shadow:0 0 0 0 var(--void-glow);
+    opacity:0;
+    transform:translate(-50%,-50%) scale(0.4);
+    transition:opacity 300ms ease;
+    pointer-events:none;
+  }
+  #singularity.active{ opacity:1; }
+
+  #hint{ font-size:13px; color:var(--ash); letter-spacing:0.02em; min-height:18px; transition:opacity 250ms ease; }
+
+  #toolbar{
+    display:flex; gap:10px;
+    opacity:0; transform:translateY(8px); pointer-events:none;
+    transition:opacity 350ms ease, transform 350ms ease;
+  }
+  #toolbar.show{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .tool-btn{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:var(--bg-soft); border:1px solid var(--ash-dim); border-radius:12px;
+    padding:10px 14px; color:var(--ash);
+    font-family:'Inter',sans-serif; font-size:10.5px; letter-spacing:0.03em;
+    cursor:pointer;
+    transition:border-color 200ms ease, color 200ms ease, background 200ms ease, transform 120ms ease;
+  }
+  .tool-btn .tool-icon{ display:flex; line-height:0; }
+  .tool-btn .tool-icon svg{ width:20px; height:20px; }
+  .tool-btn:hover{ border-color:var(--ash); color:var(--ink); }
+  .tool-btn:active{ transform:scale(0.96); }
+  .tool-btn.active{ background:rgba(255,255,255,0.04); }
+  .tool-btn.active[data-tool="balyoz"]{ border-color:var(--ember); color:var(--ink); }
+  .tool-btn.active[data-tool="alev"]{ border-color:var(--flame); color:var(--flame-core); }
+  .tool-btn.active[data-tool="karadelik"]{ border-color:var(--void-glow); color:var(--void-glow); }
+
+  #breathe{
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+    opacity:0; pointer-events:none; position:absolute;
+    transition:opacity 600ms ease;
+  }
+  #breathe.show{ opacity:1; pointer-events:auto; position:relative; }
+  .breath-orb{
+    width:110px; height:110px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, rgba(255,91,62,0.32), rgba(255,91,62,0.04) 70%);
+    border:1px solid var(--ember-dim);
+    box-shadow:0 0 44px rgba(209,68,47,0.14);
+    animation:breathPulse 7s ease-in-out infinite;
+  }
+  @keyframes breathPulse{
+    0%{ transform:scale(0.68); opacity:0.55; }
+    50%{ transform:scale(1.18); opacity:1; }
+    100%{ transform:scale(0.68); opacity:0.55; }
+  }
+  #breatheLabel{ font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ash); }
+
+  .particle{
+    position:fixed; top:0; left:0;
+    width:var(--size); height:var(--size);
+    background:var(--ember-bright);
+    border-radius:1px;
+    opacity:1;
+    transform:translate(var(--x0), var(--y0)) rotate(0deg);
+    transition:transform 900ms cubic-bezier(.15,.6,.35,1), opacity 900ms ease;
+    z-index:4;
+    pointer-events:none;
+  }
+  .particle.fly{ transform:translate(var(--x1), var(--y1)) rotate(var(--rot)); opacity:0; }
+
+  #aftermath{
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+    opacity:0; transform:translateY(8px);
+    transition:opacity 500ms ease 250ms, transform 500ms ease 250ms;
+    pointer-events:none; position:absolute;
+  }
+  #aftermath.show{ opacity:1; transform:translateY(0); pointer-events:auto; position:relative; }
+  #aftermath p{ margin:0; font-size:15px; color:var(--ash); letter-spacing:0.02em; }
+
+  /* --- nurture panel --- */
+  #nurtureStage{ min-height:120px; display:flex; align-items:center; justify-content:center; }
+  #nurtureWord{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(24px,6vw,56px);
+    color:var(--ash-dim);
+    text-align:center;
+    max-width:min(88vw,700px);
+    white-space:pre-wrap; word-break:break-word;
+    transform:scale(0.3);
+    opacity:0;
+    transition:transform 1.8s cubic-bezier(.2,.8,.2,1), opacity 1.4s ease, color 1.8s ease, text-shadow 1.8s ease;
+  }
+  #nurtureWord.bloom{ transform:scale(1); opacity:1; color:var(--life-bright); text-shadow:0 0 26px var(--life-glow); }
+
+  #gardenWrap{ width:min(90vw,640px); display:flex; flex-direction:column; align-items:center; gap:10px; }
+  #gardenHeader{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+  }
+  #gardenTitle{ font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ash); font-weight:600; }
+  .icon-btn{
+    background:none; border:1px solid var(--ash-dim); border-radius:50%;
+    width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+    color:var(--ash); cursor:pointer;
+    transition:border-color 200ms ease, color 200ms ease;
+  }
+  .icon-btn svg{ width:15px; height:15px; }
+  .icon-btn:hover{ border-color:var(--life); color:var(--life-bright); }
+  #gardenEmpty{ font-size:12px; color:var(--ash-dim); }
+  #gardenList{
+    display:flex; flex-wrap:wrap; gap:14px 12px; justify-content:center;
+    max-height:240px; overflow-y:auto; width:100%; padding:14px 6px 8px;
+  }
+  .garden-chip{
+    position:relative;
+    display:inline-flex; align-items:center; gap:6px;
+    background:linear-gradient(155deg, rgba(123,216,143,0.10), var(--bg-soft) 55%);
+    border:1px solid var(--life-dim);
+    color:var(--life-bright);
+    border-radius:10px;
+    padding:9px 10px 9px 14px;
+    font-size:12px;
+    max-width:220px;
+    box-shadow:0 6px 16px rgba(0,0,0,0.35);
+    opacity:0;
+    transform:rotate(var(--rot, 0deg)) scale(0.7) translateY(6px);
+    animation:chipIn 500ms ease forwards;
+    transition:opacity 300ms ease, transform 300ms ease, box-shadow 200ms ease;
+  }
+  .garden-chip:hover{ box-shadow:0 8px 20px rgba(0,0,0,0.45); z-index:2; }
+  .garden-chip::before{
+    content:'';
+    position:absolute; top:-5px; left:50%;
+    width:7px; height:7px;
+    transform:translateX(-50%);
+    border-radius:50%;
+    background:var(--ember-bright);
+    box-shadow:0 1px 3px rgba(0,0,0,0.5);
+  }
+  .garden-chip.removing{ opacity:0; transform:rotate(var(--rot, 0deg)) scale(0.7); }
+  .chip-text{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
+  .chip-remove{
+    flex-shrink:0;
+    background:none; border:none;
+    color:var(--ash-dim);
+    font-size:15px; line-height:1;
+    width:18px; height:18px;
+    border-radius:50%;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:color 200ms ease, background 200ms ease;
+  }
+  .chip-remove:hover{ color:var(--ember-bright); background:rgba(209,68,47,0.12); }
+  @keyframes chipIn{
+    from{ opacity:0; transform:rotate(var(--rot, 0deg)) scale(0.7) translateY(6px); }
+    to{ opacity:1; transform:rotate(var(--rot, 0deg)) scale(1) translateY(0); }
+  }
+
+  .link-btn{
+    background:none; border:none;
+    color:var(--ash);
+    font-family:'Inter',sans-serif;
+    font-size:12px; letter-spacing:0.04em;
+    text-decoration:underline; text-underline-offset:3px;
+    cursor:pointer;
+    padding:4px;
+  }
+  .link-btn:hover{ color:var(--ink); }
+
+  .milestone-toast{
+    position:fixed; top:96px; left:50%;
+    transform:translate(-50%, -10px);
+    background:var(--bg-soft);
+    border:1px solid var(--ash-dim);
+    color:var(--ink);
+    padding:10px 20px;
+    border-radius:999px;
+    font-size:12.5px;
+    letter-spacing:0.02em;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+    opacity:0;
+    z-index:60;
+    pointer-events:none;
+    transition:opacity 350ms ease, transform 350ms ease;
+    white-space:nowrap;
+  }
+  .milestone-toast.show{ opacity:1; transform:translate(-50%, 0); }
+
+  @media (prefers-reduced-motion: reduce){
+    #wordText.shake{ animation:none; }
+    .particle{ transition:opacity 500ms ease; }
+    .breath-orb{ animation:none; opacity:0.85; }
+    .shake-screen, .shake-screen.strong{ animation:none !important; }
+    .flame{ animation:none; }
+  }
+
+  @media (max-width:520px){
+    #topbar{ padding:14px 16px 8px; }
+    main{ padding-top:92px; }
+  }
+
+  /* --- gezen tatlı figür --- */
+  .critter{
+    position:fixed;
+    top:0; left:0;
+    z-index:50;
+    pointer-events:auto;
+    cursor:pointer;
+    width:58px; height:58px;
+    will-change:transform;
+  }
+  .critter-body{
+    width:100%; height:100%;
+    display:block;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 10px var(--ember-dim));
+    animation:critterBob 2.1s ease-in-out infinite alternate;
+  }
+  .critter-body path.critter-fill{ opacity:1; stroke:rgba(15,12,10,0.4); stroke-width:0.6; stroke-linejoin:round; }
+  .critter-body .critter-eye{ fill:#231d18; }
+  @keyframes critterBob{
+    0%{ transform:translateY(0) rotate(-3deg); }
+    100%{ transform:translateY(-6px) rotate(3deg); }
+  }
+  .critter-body .critter-eyes{
+    animation:critterBlink 4.6s ease-in-out infinite;
+    transform-origin:center;
+  }
+  @keyframes critterBlink{
+    0%, 92%, 100%{ transform:scaleY(1); }
+    96%{ transform:scaleY(0.12); }
+  }
+  .critter.startled .critter-body{ animation:critterShake 0.25s ease-in-out 3; }
+  @keyframes critterShake{
+    0%,100%{ transform:translateY(0) rotate(0); }
+    50%{ transform:translateY(-2px) rotate(-10deg); }
+  }
+</style>
+</head>
+<body>
+
+<div id="vignette" aria-hidden="true"></div>
+<div id="grain" aria-hidden="true"></div>
+
+<div id="topbar">
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="6" fill="#131110"/>
+      <path d="M16 6 L11 16 L15 16 L13 26 L22 14 L17 14 Z" fill="#ff5b3e"/>
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">Yok Et / Yaşat</span>
+      <span class="brand-tagline">dijital ritüel</span>
+    </div>
+  </div>
+  <button id="soundToggle" type="button" aria-pressed="true" aria-label="Sesi kapat">
+    <svg id="soundIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="4,9 8,9 13,4 13,20 8,15 4,15" fill="currentColor" stroke="none"/>
+      <path d="M16 8a5 5 0 0 1 0 8" />
+      <path d="M19 5a9 9 0 0 1 0 14" />
+    </svg>
+  </button>
+</div>
+
+<div id="appShake">
+<main>
+
+  <div id="panelDestroy" class="panel active">
+    <div id="entry" class="entry-block">
+      <textarea id="wordInput" class="app-textarea" rows="4" maxlength="240" placeholder="seni ne yoruyor? anlat, sonra yok edelim." aria-label="Yok etmek istediğin düşünce veya kelime"></textarea>
+      <div id="destroySuggestions" class="suggestion-row"></div>
+      <div id="charcount" class="char-count">0 / 240</div>
+      <button id="destroyBtn" class="app-btn" disabled>Yok Et</button>
+      <p class="onboarding-hint">Yazdığın şey ekranda büyüyecek. Aşağıdan bir araç seç ve onu yok et.</p>
+    </div>
+
+    <div id="stage" data-tool="balyoz">
+      <span id="wordText" role="button" tabindex="0" aria-label="Yazdığın metin. Seçtiğin araçla etkileşime gir."></span>
+      <svg id="cracks" viewBox="0 0 100 60" aria-hidden="true">
+        <path d="M50,30 L38,8 M50,30 L44,4" />
+        <path d="M50,30 L70,10 M50,30 L80,4" />
+        <path d="M50,30 L20,40 M50,30 L6,34" />
+        <path d="M50,30 L78,44 M50,30 L92,38" />
+        <path d="M50,30 L50,56 M50,30 L60,58 M50,30 L40,58" />
+      </svg>
+      <div id="flames" aria-hidden="true">
+        <span class="flame tl"></span>
+        <span class="flame tr"></span>
+        <span class="flame bl"></span>
+        <span class="flame br"></span>
+      </div>
+      <div id="singularity" aria-hidden="true"></div>
+    </div>
+
+    <div id="hint" aria-live="polite">kelimeye tıkla</div>
+
+    <div id="toolbar" role="group" aria-label="Yok etme aracı seç">
+      <button class="tool-btn active" data-tool="balyoz" aria-pressed="true">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 6.3 L19.8 11.6 L16.6 14.8 L11.3 9.5 Z" />
+            <path d="M11.3 9.5 L4.2 16.6 L7.4 19.8 L14.5 12.7" />
+          </svg>
+        </span>Balyoz
+      </button>
+      <button class="tool-btn" data-tool="alev" aria-pressed="false">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3c1.4 3.1-1.6 4.4-1.6 7.4a3.6 3.6 0 1 0 7.2 0c0-1.9-.9-2.9-.9-2.9.4 1.8-.9 2.9-.9 2.9-.2-2.9-1.9-2.9-1.9-4.8-1 .9-1.9 1.9-1.9-2.6z" />
+          </svg>
+        </span>Alev Makinesi
+      </button>
+      <button class="tool-btn" data-tool="karadelik" aria-pressed="false">
+        <span class="tool-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" />
+            <ellipse cx="12" cy="12" rx="9.2" ry="3.6" />
+            <ellipse cx="12" cy="12" rx="9.2" ry="3.6" transform="rotate(60 12 12)" />
+          </svg>
+        </span>Kara Delik
+      </button>
+    </div>
+
+    <div id="breathe" aria-live="polite">
+      <div class="breath-orb"></div>
+      <p id="breatheLabel">Nefes al</p>
+    </div>
+
+    <div id="aftermath" aria-live="polite">
+      <p>Bu an geçti.</p>
+      <button id="againBtn" class="app-btn">Yeni Bir Kötü Anı Yok Et</button>
+      <button id="shareBtnDestroy" class="link-btn">Paylaş</button>
+    </div>
+  </div>
+
+  <div id="panelNurture" class="panel">
+    <div id="nurtureEntry" class="entry-block">
+      <textarea id="nurtureInput" class="app-textarea" rows="4" maxlength="240" placeholder="neyi yaşatmak, büyütmek istiyorsun?" aria-label="Yaşatmak istediğin düşünce"></textarea>
+      <div id="nurtureSuggestions" class="suggestion-row"></div>
+      <div id="nurtureCount" class="char-count">0 / 240</div>
+      <button id="nurtureBtn" class="app-btn">Yaşat</button>
+      <p class="onboarding-hint">Yazdığın şey filizlenip aşağıdaki bahçene eklenecek.</p>
+    </div>
+
+    <div id="nurtureStage">
+      <span id="nurtureWord"></span>
+    </div>
+
+    <div id="gardenWrap">
+      <div id="gardenHeader">
+        <span id="gardenTitle">Bahçen</span>
+        <button id="gardenShareBtn" class="icon-btn" aria-label="Bahçeni paylaş" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/>
+            <path d="M8.3 10.7 L15.7 6.3 M8.3 13.3 L15.7 17.7"/>
+          </svg>
+        </button>
+      </div>
+      <p id="gardenEmpty">Henüz bir şey eklemedin.</p>
+      <div id="gardenList" aria-live="polite"></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<div id="sessionStat">
+  <span id="sessionStatText"></span>
+  <button id="cardBtn" class="icon-btn" aria-label="Kart oluştur ve paylaş" hidden>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="6" width="18" height="14" rx="2.4"/>
+      <path d="M8 6 L9.5 3.5 h5 L16 6"/>
+      <circle cx="12" cy="13" r="3.4"/>
+    </svg>
+  </button>
+</div>
+
+<nav id="bottomNav" role="tablist" aria-label="Mod seç">
+  <button class="tab-btn active" data-panel="destroy" role="tab" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M13 3 L9.5 11 L13.2 11.8 L8 21 L16.5 12 L12.2 12 Z" />
+    </svg>
+    <span>Yok Et</span>
+  </button>
+  <button class="tab-btn" data-panel="nurture" role="tab" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 21V11" />
+      <path d="M12 11c0-4.2 3-6.6 7.2-6.6 0 4.2-3 7.2-7.2 7.2" />
+      <path d="M12 14c0-3.2-3-5.3-7-5.3 0 3.2 3 6 7 6" />
+    </svg>
+    <span>Yaşat</span>
+  </button>
+</nav>
+
+<script>
+/* ============ Paylaşılan yardımcılar ============ */
+
+const Stats = {
+  destroyCount: 0,
+  nurtureCount: 0,
+  el: null,
+  textEl: null,
+  cardBtn: null,
+  init(){
+    this.el = document.getElementById('sessionStat');
+    this.textEl = document.getElementById('sessionStatText');
+    this.cardBtn = document.getElementById('cardBtn');
+  },
+  setDestroy(n){ this.destroyCount = n; this.render(); },
+  setNurture(n){ this.nurtureCount = n; this.render(); },
+  render(){
+    if(!this.el) return;
+    const parts = [];
+    if(this.destroyCount > 0) parts.push(this.destroyCount + ' şey yok edildi');
+    if(this.nurtureCount > 0) parts.push(this.nurtureCount + ' şey yaşatılıyor');
+    if(parts.length === 0){
+      this.el.classList.remove('show');
+      if(this.cardBtn) this.cardBtn.hidden = true;
+      return;
+    }
+    this.textEl.textContent = parts.join(' · ');
+    this.el.classList.add('show');
+    if(this.cardBtn) this.cardBtn.hidden = false;
+  }
+};
+Stats.init();
+
+const MILESTONES = [5, 10, 25, 50, 100, 200, 500];
+
+const DESTROY_PROMPTS = [
+  'Bugün yaşadığım bir tartışma',
+  'İçimde büyüyen bir kaygı',
+  'Kendime söylediğim kötü bir söz',
+  'Bitmeyen bir "keşke"',
+  'Beni yoran bir bekleyiş',
+  'Unutamadığım bir kırgınlık',
+  'İçimi kemiren bir pişmanlık',
+  'Sürekli kafamda dönen bir düşünce'
+];
+
+const NURTURE_PROMPTS = [
+  'Bugün beni güldüren bir şey',
+  'Minnettar olduğum bir insan',
+  'Küçük bir başarım',
+  'Sevdiğim bir an',
+  'Kendimle gurur duyduğum bir şey',
+  'Bugün fark ettiğim bir güzellik',
+  'Beni umutlandıran bir şey',
+  'Bana iyi gelen bir alışkanlık'
+];
+
+function pickRandom(arr, n){
+  const copy = arr.slice();
+  const out = [];
+  while(out.length < n && copy.length){
+    const i = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(i, 1)[0]);
+  }
+  return out;
+}
+
+function renderSuggestions(container, pool, targetInput){
+  if(!container) return;
+  container.innerHTML = '';
+  pickRandom(pool, 4).forEach(text => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'suggestion-chip';
+    btn.textContent = text;
+    btn.addEventListener('click', () => {
+      targetInput.value = text;
+      targetInput.dispatchEvent(new Event('input', { bubbles: true }));
+      targetInput.focus();
+      const len = targetInput.value.length;
+      targetInput.setSelectionRange(len, len);
+    });
+    container.appendChild(btn);
+  });
+}
+
+async function buildSessionCardCanvas(){
+  if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+  const W = 1080, H = 1350;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0d0b0a');
+  bg.addColorStop(1, '#131110');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const glow1 = ctx.createRadialGradient(W * 0.3, H * 0.4, 10, W * 0.3, H * 0.4, 460);
+  glow1.addColorStop(0, 'rgba(255,91,62,0.26)');
+  glow1.addColorStop(1, 'rgba(255,91,62,0)');
+  ctx.fillStyle = glow1; ctx.fillRect(0, 0, W, H);
+
+  const glow2 = ctx.createRadialGradient(W * 0.7, H * 0.68, 10, W * 0.7, H * 0.68, 460);
+  glow2.addColorStop(0, 'rgba(123,216,143,0.22)');
+  glow2.addColorStop(1, 'rgba(123,216,143,0)');
+  ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
+
+  ctx.textAlign = 'center';
+
+  ctx.fillStyle = 'rgba(236,230,218,0.65)';
+  ctx.font = '600 30px Inter, sans-serif';
+  ctx.fillText('Y O K   E T   ·   Y A Ş A T', W / 2, 140);
+
+  ctx.strokeStyle = 'rgba(114,106,95,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W * 0.32, 178); ctx.lineTo(W * 0.68, 178); ctx.stroke();
+
+  ctx.fillStyle = '#ff5b3e';
+  ctx.font = '900 210px "Archivo Black", sans-serif';
+  ctx.fillText(String(Stats.destroyCount), W / 2, 560);
+  ctx.fillStyle = 'rgba(236,230,218,0.72)';
+  ctx.font = '500 32px Inter, sans-serif';
+  ctx.fillText('zor an yok edildi', W / 2, 615);
+
+  ctx.fillStyle = 'rgba(114,106,95,0.65)';
+  ctx.font = '400 36px Inter, sans-serif';
+  ctx.fillText('·', W / 2, 715);
+
+  ctx.fillStyle = '#a6f2b3';
+  ctx.font = '900 210px "Archivo Black", sans-serif';
+  ctx.fillText(String(Stats.nurtureCount), W / 2, 1070);
+  ctx.fillStyle = 'rgba(236,230,218,0.72)';
+  ctx.font = '500 32px Inter, sans-serif';
+  ctx.fillText('güzel şey yaşatılıyor', W / 2, 1125);
+
+  const dateStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+  ctx.fillStyle = 'rgba(114,106,95,0.85)';
+  ctx.font = '500 26px Inter, sans-serif';
+  ctx.fillText(dateStr, W / 2, H - 70);
+
+  return canvas;
+}
+
+async function generateAndShareCard(){
+  const canvas = await buildSessionCardCanvas();
+  canvas.toBlob(async (blob) => {
+    if(!blob) return;
+    try{
+      const file = new File([blob], 'yok-et-yasat-kart.png', { type: 'image/png' });
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        await navigator.share({ files: [file] });
+        return;
+      }
+    }catch(e){
+      if(e && e.name === 'AbortError') return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'yok-et-yasat-kart.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    showMilestoneToast('Kart indirildi');
+  }, 'image/png');
+}
+
+function showMilestoneToast(text){
+  const el = document.createElement('div');
+  el.className = 'milestone-toast';
+  el.textContent = text;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 450);
+  }, 2600);
+}
+
+async function shareText(text){
+  try{
+    if(navigator.share){ await navigator.share({ text }); return; }
+  }catch(e){
+    if(e && e.name === 'AbortError') return;
+  }
+  try{
+    await navigator.clipboard.writeText(text);
+    showMilestoneToast('Panoya kopyalandı');
+  }catch(e){ /* sessiz geç */ }
+}
+
+/* ============ Yok Etme Araçları (OOP hiyerarşisi) ============ */
+
+class YokEtmeAraci {
+  constructor(app){ this.app = app; }
+  get id(){ return 'base'; }
+  activate(){}
+  deactivate(){}
+  reset(){}
+}
+
+class BalyozAraci extends YokEtmeAraci {
+  constructor(app){
+    super(app);
+    this.hits = 0;
+    this.maxHits = 5;
+    this._click = this._click.bind(this);
+    this._key = this._key.bind(this);
+  }
+  get id(){ return 'balyoz'; }
+  activate(){
+    this.app.wordText.addEventListener('click', this._click);
+    this.app.wordText.addEventListener('keydown', this._key);
+    this.app.setHint('kelimeye tıkla');
+  }
+  deactivate(){
+    this.app.wordText.removeEventListener('click', this._click);
+    this.app.wordText.removeEventListener('keydown', this._key);
+  }
+  reset(){ this.hits = 0; this.app.setCrackLevel(0); }
+  _key(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); this._hit(e); } }
+  _click(e){ this._hit(e); }
+  _hit(e){
+    if(this.app.busy || !this.app.hasWord()) return;
+    this.hits++;
+    this.app.registerDiscreteHit(e, this.hits);
+    this.app.setCrackLevel(this.hits);
+    const hints = ['neredeyse', 'devam et', 'daha sert', 'bir tık kaldı', ''];
+    this.app.setHint(this.hits < this.maxHits ? hints[this.hits - 1] : '');
+    if(this.hits >= this.maxHits) this.app.destroyByShatter();
+  }
+}
+
+class AlevAraci extends YokEtmeAraci {
+  constructor(app){
+    super(app);
+    this.progress = 0;
+    this.holding = false;
+    this.rafId = null;
+    this.lastT = 0;
+    this.lastStep = -1;
+    this.soundHandle = null;
+    this.px = 0; this.py = 0;
+    this.sprayAccum = 0;
+    this._down = this._down.bind(this);
+    this._up = this._up.bind(this);
+    this._move = this._move.bind(this);
+    this._loop = this._loop.bind(this);
+    this._keydown = this._keydown.bind(this);
+    this._keyup = this._keyup.bind(this);
+  }
+  get id(){ return 'alev'; }
+  activate(){
+    this.app.wordText.addEventListener('pointerdown', this._down);
+    this.app.wordText.addEventListener('keydown', this._keydown);
+    window.addEventListener('pointerup', this._up);
+    window.addEventListener('pointercancel', this._up);
+    window.addEventListener('pointermove', this._move);
+    window.addEventListener('keyup', this._keyup);
+    this.app.setHint('basılı tut, alev püskürt');
+    this.app.setFlamesVisible(true);
+  }
+  deactivate(){
+    this.app.wordText.removeEventListener('pointerdown', this._down);
+    this.app.wordText.removeEventListener('keydown', this._keydown);
+    window.removeEventListener('pointerup', this._up);
+    window.removeEventListener('pointercancel', this._up);
+    window.removeEventListener('pointermove', this._move);
+    window.removeEventListener('keyup', this._keyup);
+    this._stopLoop();
+    this._stopSound();
+    this.app.setFlamesVisible(false);
+  }
+  reset(){
+    this.progress = 0; this.holding = false; this.lastStep = -1; this.sprayAccum = 0;
+    this._stopLoop(); this._stopSound();
+    this.app.setBurnLevel(0);
+  }
+  _keydown(e){ if((e.key === 'Enter' || e.key === ' ') && !e.repeat){ e.preventDefault(); this._down(); } }
+  _keyup(e){ if(e.key === 'Enter' || e.key === ' ') this._up(); }
+  _move(e){ if(this.holding){ this.px = e.clientX; this.py = e.clientY; } }
+  _down(e){
+    if(this.app.busy || !this.app.hasWord() || this.holding) return;
+    this.holding = true;
+    const rect = this.app.wordText.getBoundingClientRect();
+    this.px = (e && typeof e.clientX === 'number' && e.clientX) ? e.clientX : rect.left + rect.width / 2;
+    this.py = (e && typeof e.clientY === 'number' && e.clientY) ? e.clientY : rect.top + rect.height / 2;
+    this.sprayAccum = 0;
+    this.lastT = performance.now();
+    this._startSound();
+    this._startLoop();
+  }
+  _up(){
+    if(!this.holding) return;
+    this.holding = false;
+    this._stopSound();
+  }
+  _startLoop(){ if(!this.rafId) this.rafId = requestAnimationFrame(this._loop); }
+  _stopLoop(){ if(this.rafId){ cancelAnimationFrame(this.rafId); this.rafId = null; } }
+  _startSound(){ this.soundHandle = this.app.playFlameStart(); }
+  _stopSound(){ this.app.playFlameStop(this.soundHandle); this.soundHandle = null; }
+  _loop(now){
+    const dt = now - this.lastT;
+    this.lastT = now;
+    this.progress = this.holding
+      ? Math.min(1, this.progress + dt / 2400)
+      : Math.max(0, this.progress - dt / 1400);
+
+    const step = Math.floor(this.progress * 16);
+    if(step !== this.lastStep){ this.lastStep = step; this.app.hapticPulse([10]); }
+
+    this.app.setBurnLevel(this.progress);
+
+    if(this.holding){
+      this.sprayAccum += dt;
+      if(this.sprayAccum > 55){
+        this.sprayAccum = 0;
+        this.app.spawnFlameSpray(this.px, this.py);
+      }
+    }
+
+    if(this.progress >= 1){ this._stopLoop(); this._stopSound(); this.app.destroyByFire(); return; }
+    if(this.progress <= 0 && !this.holding){ this._stopLoop(); return; }
+    this.rafId = requestAnimationFrame(this._loop);
+  }
+}
+
+class KaraDelikAraci extends YokEtmeAraci {
+  constructor(app){
+    super(app);
+    this.hits = 0;
+    this.maxHits = 5;
+    this._click = this._click.bind(this);
+    this._key = this._key.bind(this);
+  }
+  get id(){ return 'karadelik'; }
+  activate(){
+    this.app.wordText.addEventListener('click', this._click);
+    this.app.wordText.addEventListener('keydown', this._key);
+    this.app.setHint('kelimeyi çek');
+    this.app.setSingularityVisible(true);
+  }
+  deactivate(){
+    this.app.wordText.removeEventListener('click', this._click);
+    this.app.wordText.removeEventListener('keydown', this._key);
+    this.app.setSingularityVisible(false);
+  }
+  reset(){ this.hits = 0; this.app.setSuckLevel(0); }
+  _key(e){ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); this._hit(e); } }
+  _click(e){ this._hit(e); }
+  _hit(e){
+    if(this.app.busy || !this.app.hasWord()) return;
+    this.hits++;
+    this.app.registerDiscreteHit(e, this.hits);
+    this.app.setSuckLevel(this.hits / this.maxHits);
+    const hints = ['çekiliyor', 'daha fazla', 'merkeze yaklaşıyor', 'tekilliğe yakın', ''];
+    this.app.setHint(this.hits < this.maxHits ? hints[this.hits - 1] : '');
+    if(this.hits >= this.maxHits) this.app.destroyByBlackHole();
+  }
+}
+
+/* ============ Yok Et paneli ============ */
+
+class DestructionApp {
+  constructor(){
+    this.root = document.documentElement;
+    this.appShake = document.getElementById('appShake');
+    this.entry = document.getElementById('entry');
+    this.input = document.getElementById('wordInput');
+    this.destroyBtn = document.getElementById('destroyBtn');
+    this.charcount = document.getElementById('charcount');
+    this.suggestions = document.getElementById('destroySuggestions');
+    this.stage = document.getElementById('stage');
+    this.wordText = document.getElementById('wordText');
+    this.cracksSvg = document.getElementById('cracks');
+    this.crackPaths = this.cracksSvg.querySelectorAll('path');
+    this.flames = document.getElementById('flames');
+    this.singularity = document.getElementById('singularity');
+    this.hint = document.getElementById('hint');
+    this.toolbar = document.getElementById('toolbar');
+    this.toolButtons = Array.from(this.toolbar.querySelectorAll('.tool-btn'));
+    this.breathe = document.getElementById('breathe');
+    this.breatheLabel = document.getElementById('breatheLabel');
+    this.aftermath = document.getElementById('aftermath');
+    this.againBtn = document.getElementById('againBtn');
+    this.shareBtnDestroy = document.getElementById('shareBtnDestroy');
+    this.sessionStat = document.getElementById('sessionStat');
+    this.soundToggle = document.getElementById('soundToggle');
+    this.soundIcon = document.getElementById('soundIcon');
+
+    this.MAX_CHARS = 240;
+    this.busy = false;
+    this.soundOn = true;
+    this.releasedCount = 0;
+    this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.audioCtx = null;
+    this.comboCount = 0;
+    this.lastHitTime = 0;
+
+    this.tools = {
+      balyoz: new BalyozAraci(this),
+      alev: new AlevAraci(this),
+      karadelik: new KaraDelikAraci(this)
+    };
+    this.currentToolId = 'balyoz';
+
+    this._bind();
+    renderSuggestions(this.suggestions, DESTROY_PROMPTS, this.input);
+  }
+
+  ctx(){
+    if(!this.audioCtx) this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return this.audioCtx;
+  }
+
+  hasWord(){ return !!this.wordText.textContent; }
+  setHint(text){ this.hint.textContent = text; this.hint.style.opacity = '1'; }
+
+  hapticPulse(pattern){
+    if(navigator.vibrate){ try{ navigator.vibrate(pattern); }catch(e){} }
+  }
+
+  screenShake(strong){
+    if(this.reduceMotion) return;
+    this.appShake.classList.remove('shake-screen', 'strong');
+    void this.appShake.offsetWidth;
+    this.appShake.classList.add('shake-screen');
+    if(strong) this.appShake.classList.add('strong');
+  }
+
+  registerDiscreteHit(e, hitIndex){
+    const now = performance.now();
+    this.comboCount = (now - this.lastHitTime < 650) ? this.comboCount + 1 : 1;
+    this.lastHitTime = now;
+
+    this.hapticPulse(this.comboCount >= 4 ? [18, 10, 18] : [14]);
+    this.screenShake(this.comboCount >= 4);
+    this.playTick(hitIndex);
+    this.root.style.setProperty('--clicks', hitIndex);
+
+    if(!this.reduceMotion){
+      this.wordText.classList.remove('shake');
+      void this.wordText.offsetWidth;
+      this.wordText.classList.add('shake');
+    }
+  }
+
+  resetCombo(){ this.comboCount = 0; this.lastHitTime = 0; }
+
+  setCrackLevel(level){
+    this.crackPaths.forEach((p, i) => { p.style.opacity = i < level ? 0.75 : 0; });
+  }
+
+  setBurnLevel(progress){
+    this.flames.style.setProperty('--burn', progress);
+    this.root.style.setProperty('--clicks', progress * 5);
+    if(progress > 0){
+      this.wordText.style.color = `color-mix(in srgb, var(--ink) ${(1 - progress) * 100}%, #221c17 ${progress * 100}%)`;
+      this.wordText.style.filter = `grayscale(${Math.min(70, progress * 80)}%)`;
+      this.wordText.style.textShadow = `0 0 ${progress * 22}px var(--flame)`;
+    } else {
+      this.wordText.style.color = '';
+      this.wordText.style.filter = '';
+      this.wordText.style.textShadow = '';
+    }
+  }
+
+  setSuckLevel(t){
+    if(t > 0){
+      this.wordText.style.transform = `scale(${1 - t * 0.16}) rotate(${t * 40}deg) skew(${t * 6}deg)`;
+      this.wordText.style.filter = `blur(${t * 0.6}px)`;
+      this.wordText.style.textShadow = `0 0 ${t * 20}px var(--void-glow)`;
+    } else {
+      this.wordText.style.transform = '';
+      this.wordText.style.filter = '';
+      this.wordText.style.textShadow = '';
+    }
+    this.singularity.style.transform = `translate(-50%, -50%) scale(${0.4 + t * 1.6})`;
+    this.singularity.style.boxShadow = `0 0 ${t * 40}px ${t * 14}px var(--void-glow)`;
+  }
+
+  setFlamesVisible(on){ this.flames.style.display = on ? 'block' : 'none'; }
+  setSingularityVisible(on){ this.singularity.classList.toggle('active', !!on); }
+
+  positionOverlays(){
+    const rect = this.wordText.getBoundingClientRect();
+    const stageRect = this.stage.getBoundingClientRect();
+    const pad = Math.max(rect.width, rect.height) * 0.35;
+    [this.cracksSvg, this.flames].forEach(el => {
+      el.style.width = (rect.width + pad * 2) + 'px';
+      el.style.height = (rect.height + pad * 2) + 'px';
+      el.style.left = (rect.left - stageRect.left - pad) + 'px';
+      el.style.top = (rect.top - stageRect.top - pad) + 'px';
+    });
+    this.singularity.style.left = (rect.left - stageRect.left + rect.width / 2) + 'px';
+    this.singularity.style.top = (rect.top - stageRect.top + rect.height / 2) + 'px';
+  }
+
+  spawnFlameSpray(x, y){
+    if(this.reduceMotion) return;
+    const count = 4;
+    for(let i = 0; i < count; i++){
+      const el = document.createElement('div');
+      el.className = 'flame-spark';
+      const angle = (-Math.PI / 2) + (Math.random() - 0.5) * 1.5;
+      const dist = 50 + Math.random() * 120;
+      const x1 = x + Math.cos(angle) * dist;
+      const y1 = y + Math.sin(angle) * dist;
+      const size = 6 + Math.random() * 11;
+      const dur = 380 + Math.random() * 260;
+      el.style.setProperty('--fs-size', size + 'px');
+      el.style.setProperty('--fs-x0', x + 'px');
+      el.style.setProperty('--fs-y0', y + 'px');
+      el.style.setProperty('--fs-x1', x1 + 'px');
+      el.style.setProperty('--fs-y1', y1 + 'px');
+      el.style.setProperty('--fs-dur', dur + 'ms');
+      document.body.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('fly'));
+      setTimeout(() => el.remove(), dur + 60);
+    }
+  }
+
+  spawnParticles(rect, opts){
+    opts = Object.assign({ count: 90, mode: 'outward', colors: ['var(--ember-bright)'], minDist: 120, maxDist: 380, duration: 900, gravity: 40 }, opts);
+    const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
+    const frag = document.createDocumentFragment();
+    const particles = [];
+    for(let i = 0; i < opts.count; i++){
+      const p = document.createElement('div');
+      p.className = 'particle';
+      let x0, y0, x1, y1;
+      if(opts.mode === 'inward'){
+        const angle = Math.random() * Math.PI * 2;
+        const dist = opts.minDist + Math.random() * (opts.maxDist - opts.minDist);
+        x0 = cx + Math.cos(angle) * dist;
+        y0 = cy + Math.sin(angle) * dist;
+        x1 = cx + (Math.random() - 0.5) * 6;
+        y1 = cy + (Math.random() - 0.5) * 6;
+      } else if(opts.mode === 'rise'){
+        x0 = cx + (Math.random() - 0.5) * rect.width * 0.7;
+        y0 = cy + (Math.random() - 0.5) * rect.height * 0.5;
+        x1 = x0 + (Math.random() - 0.5) * 70;
+        y1 = y0 - (opts.minDist + Math.random() * (opts.maxDist - opts.minDist));
+      } else {
+        x0 = cx + (Math.random() - 0.5) * rect.width * 0.9;
+        y0 = cy + (Math.random() - 0.5) * rect.height * 0.7;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = opts.minDist + Math.random() * (opts.maxDist - opts.minDist);
+        x1 = x0 + Math.cos(angle) * dist;
+        y1 = y0 + Math.sin(angle) * dist + opts.gravity;
+      }
+      const size = (opts.mode === 'ash' || opts.mode === 'rise') ? 1.5 + Math.random() * 3 : 2 + Math.random() * 5;
+      const rot = (Math.random() - 0.5) * 720;
+      const color = opts.colors[Math.floor(Math.random() * opts.colors.length)];
+      p.style.setProperty('--size', size + 'px');
+      p.style.setProperty('--x0', x0 + 'px');
+      p.style.setProperty('--y0', y0 + 'px');
+      p.style.setProperty('--x1', x1 + 'px');
+      p.style.setProperty('--y1', y1 + 'px');
+      p.style.setProperty('--rot', rot + 'deg');
+      p.style.background = color;
+      p.style.transition = `transform ${opts.duration}ms cubic-bezier(.15,.6,.35,1), opacity ${opts.duration}ms ease`;
+      if(opts.mode === 'ash' || opts.mode === 'rise'){
+        p.style.borderRadius = '50%';
+        if(opts.mode === 'rise') p.style.boxShadow = `0 0 6px ${color}`;
+      }
+      frag.appendChild(p);
+      particles.push(p);
+    }
+    document.body.appendChild(frag);
+    requestAnimationFrame(() => particles.forEach(p => p.classList.add('fly')));
+    setTimeout(() => particles.forEach(p => p.remove()), opts.duration + 60);
+  }
+
+  /* ---- ses tasarımı ---- */
+  playTick(intensity){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const osc = c.createOscillator(); const gain = c.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(140 + intensity * 55, t0);
+    osc.frequency.exponentialRampToValueAtTime(60, t0 + 0.09);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.14 + intensity * 0.03, t0 + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.11);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t0); osc.stop(t0 + 0.12);
+  }
+
+  playType(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const osc = c.createOscillator(); const gain = c.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(370 + Math.random() * 90, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.045, t0 + 0.004);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.045);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t0); osc.stop(t0 + 0.05);
+  }
+
+  playShatter(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const thumpOsc = c.createOscillator(); const thumpGain = c.createGain();
+    thumpOsc.type = 'sine';
+    thumpOsc.frequency.setValueAtTime(95, t0);
+    thumpOsc.frequency.exponentialRampToValueAtTime(32, t0 + 0.28);
+    thumpGain.gain.setValueAtTime(0.28, t0);
+    thumpGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.32);
+    thumpOsc.connect(thumpGain).connect(c.destination);
+    thumpOsc.start(t0); thumpOsc.stop(t0 + 0.34);
+
+    const bufferSize = c.sampleRate * 0.6;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = c.createBufferSource(); noise.buffer = buffer;
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.setValueAtTime(900, t0);
+    const noiseGain = c.createGain();
+    noiseGain.gain.setValueAtTime(0.22, t0);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    noise.connect(hp).connect(noiseGain).connect(c.destination);
+    noise.start(t0);
+
+    for(let i = 0; i < 7; i++){
+      const delay = Math.random() * 0.3;
+      const dur = 0.03 + Math.random() * 0.05;
+      const size = Math.max(1, Math.floor(c.sampleRate * dur));
+      const buf = c.createBuffer(1, size, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for(let j = 0; j < size; j++) d[j] = Math.random() * 2 - 1;
+      const src = c.createBufferSource(); src.buffer = buf;
+      const bp = c.createBiquadFilter(); bp.type = 'bandpass';
+      bp.frequency.value = 1500 + Math.random() * 3000; bp.Q.value = 5 + Math.random() * 4;
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.001, t0 + delay);
+      g.gain.linearRampToValueAtTime(0.16, t0 + delay + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + delay + dur);
+      src.connect(bp).connect(g).connect(c.destination);
+      src.start(t0 + delay);
+    }
+  }
+
+  playFlameStart(){
+    if(!this.soundOn) return null;
+    const c = this.ctx();
+    const bufferSize = c.sampleRate * 2;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = c.createBufferSource(); noise.buffer = buffer; noise.loop = true;
+    const filter = c.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 650;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.0001, c.currentTime);
+    gain.gain.linearRampToValueAtTime(0.055, c.currentTime + 0.2);
+    noise.connect(filter).connect(gain).connect(c.destination);
+    noise.start();
+    return { noise, gain };
+  }
+
+  playFlameStop(handle){
+    if(!handle) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    handle.gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.25);
+    try{ handle.noise.stop(t0 + 0.3); }catch(e){}
+  }
+
+  playBurnCrumble(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const bufferSize = c.sampleRate * 0.5;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+    const noise = c.createBufferSource(); noise.buffer = buffer;
+    const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.8;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.16, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+    noise.connect(bp).connect(gain).connect(c.destination);
+    noise.start(t0);
+  }
+
+  playSuck(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(700, t0);
+    osc.frequency.exponentialRampToValueAtTime(55, t0 + 0.5);
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.18, t0);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+    osc.connect(gain).connect(c.destination);
+    osc.start(t0); osc.stop(t0 + 0.6);
+
+    const bufferSize = c.sampleRate * 0.5;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * (i / bufferSize);
+    const noise = c.createBufferSource(); noise.buffer = buffer;
+    const hp = c.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1000;
+    const ng = c.createGain();
+    ng.gain.setValueAtTime(0.12, t0);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+    noise.connect(hp).connect(ng).connect(c.destination);
+    noise.start(t0);
+  }
+
+  playBreath(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime; const dur = 7;
+    const bufferSize = Math.floor(c.sampleRate * dur);
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = c.createBufferSource(); noise.buffer = buffer;
+    const filter = c.createBiquadFilter(); filter.type = 'bandpass'; filter.Q.value = 0.6;
+    filter.frequency.setValueAtTime(280, t0);
+    filter.frequency.linearRampToValueAtTime(820, t0 + 3.5);
+    filter.frequency.linearRampToValueAtTime(280, t0 + 7);
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.05, t0 + 3.3);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 6.9);
+    noise.connect(filter).connect(gain).connect(c.destination);
+    noise.start(t0); noise.stop(t0 + dur + 0.1);
+  }
+
+  playChime(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((freq, i) => {
+      const start = t0 + i * 0.1;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.06, start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.55);
+      osc.connect(gain).connect(c.destination);
+      osc.start(start); osc.stop(start + 0.6);
+    });
+  }
+
+  /* ---- yok etme sonuçları ---- */
+  destroyByShatter(){
+    this.busy = true;
+    this.playShatter();
+    this.screenShake(true);
+    this.hapticPulse([20, 15, 25]);
+    const rect = this.wordText.getBoundingClientRect();
+    const count = Math.max(70, Math.min(220, Math.round((rect.width * rect.height) / 900)));
+    this.wordText.style.opacity = '0';
+    this.hint.style.opacity = '0';
+    this.spawnParticles(rect, { count, mode: 'outward', colors: ['var(--ember-bright)', 'var(--ink)'], minDist: 120, maxDist: 380, duration: 900, gravity: 40 });
+    setTimeout(() => this._afterDestroy(), 950);
+  }
+
+  destroyByFire(){
+    this.busy = true;
+    this.playBurnCrumble();
+    this.screenShake(true);
+    this.hapticPulse([25, 10, 15, 10, 15]);
+    const rect = this.wordText.getBoundingClientRect();
+    const count = Math.max(60, Math.min(160, Math.round((rect.width * rect.height) / 1100)));
+    this.wordText.style.opacity = '0';
+    this.hint.style.opacity = '0';
+    this.spawnParticles(rect, { count, mode: 'ash', colors: ['#2e2a26', '#3a352f', 'var(--flame-core)'], minDist: 20, maxDist: 90, duration: 1400, gravity: 110 });
+    setTimeout(() => this._afterDestroy(), 1450);
+  }
+
+  destroyByBlackHole(){
+    this.busy = true;
+    this.playSuck();
+    this.screenShake(true);
+    this.hapticPulse([15, 10, 15, 10, 30]);
+    const rect = this.wordText.getBoundingClientRect();
+    const spread = Math.max(rect.width, rect.height);
+    const count = Math.max(70, Math.min(180, Math.round((rect.width * rect.height) / 1000)));
+    this.wordText.style.opacity = '0';
+    this.hint.style.opacity = '0';
+    this.spawnParticles(rect, { count, mode: 'inward', colors: ['var(--void-glow)', 'var(--ink)'], minDist: spread * 0.6 + 40, maxDist: spread * 1.1 + 160, duration: 650 });
+    setTimeout(() => this._afterDestroy(), 700);
+  }
+
+  _afterDestroy(){
+    this.wordText.textContent = '';
+    this.wordText.style.opacity = '1';
+    this.clearWordVisuals();
+    this.stage.classList.remove('armed');
+    this.toolbar.classList.remove('show');
+    this._startBreathing();
+  }
+
+  clearWordVisuals(){
+    this.wordText.style.transform = '';
+    this.wordText.style.filter = '';
+    this.wordText.style.color = '';
+    this.wordText.style.textShadow = '';
+    this.setCrackLevel(0);
+    this.setBurnLevel(0);
+    this.setSuckLevel(0);
+    this.root.style.setProperty('--clicks', 0);
+  }
+
+  _spawnBreathGreens(){
+    if(this.reduceMotion) return;
+    const orb = this.breathe.querySelector('.breath-orb');
+    if(!orb) return;
+    const rect = orb.getBoundingClientRect();
+    this.spawnParticles(rect, {
+      count: 16, mode: 'rise',
+      colors: ['var(--life-bright)', 'var(--life)'],
+      minDist: 90, maxDist: 240, duration: 2200
+    });
+  }
+
+  _startBreathing(){
+    this.breatheLabel.textContent = 'Nefes al';
+    this.breathe.classList.add('show');
+    this.playBreath();
+
+    requestAnimationFrame(() => {
+      this._spawnBreathGreens();
+      this._breathInterval = setInterval(() => this._spawnBreathGreens(), 1100);
+    });
+
+    setTimeout(() => { this.breatheLabel.textContent = 'Nefes ver'; }, 3500);
+    setTimeout(() => {
+      if(this._breathInterval){ clearInterval(this._breathInterval); this._breathInterval = null; }
+      this.breathe.classList.remove('show');
+      this.aftermath.classList.add('show');
+      this.busy = false;
+      this.releasedCount++;
+      Stats.setDestroy(this.releasedCount);
+      if(MILESTONES.includes(this.releasedCount)){
+        this.playMilestoneChime();
+        this.hapticPulse([20, 30, 20]);
+        showMilestoneToast(this.releasedCount + '. kez kendini bıraktın');
+      }
+    }, 7000);
+  }
+
+  playMilestoneChime(){
+    if(!this.soundOn) return;
+    const c = this.ctx(); const t0 = c.currentTime;
+    [440, 587.33].forEach((freq, i) => {
+      const start = t0 + i * 0.12;
+      const osc = c.createOscillator(); const gain = c.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.07, start + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.5);
+      osc.connect(gain).connect(c.destination);
+      osc.start(start); osc.stop(start + 0.55);
+    });
+  }
+
+  selectTool(id){
+    if(id === this.currentToolId) return;
+    const wasArmed = this.stage.classList.contains('armed');
+    if(wasArmed) this.tools[this.currentToolId].deactivate();
+    this.currentToolId = id;
+    this.toolButtons.forEach(btn => {
+      const active = btn.dataset.tool === id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', String(active));
+    });
+    this.stage.dataset.tool = id;
+    if(wasArmed){
+      this.clearWordVisuals();
+      this.tools[id].reset();
+      this.tools[id].activate();
+      this.positionOverlays();
+    }
+  }
+
+  fontSizeFor(len){
+    if(len <= 12) return 'clamp(34px, 9vw, 96px)';
+    if(len <= 30) return 'clamp(28px, 7vw, 68px)';
+    if(len <= 70) return 'clamp(22px, 5.5vw, 46px)';
+    if(len <= 140) return 'clamp(18px, 4vw, 32px)';
+    return 'clamp(15px, 3.2vw, 24px)';
+  }
+
+  summon(){
+    const value = this.input.value.trim();
+    if(!value) return;
+
+    this.wordText.textContent = value;
+    this.wordText.setAttribute('aria-label', value + '. Seçtiğin araçla yok etmek için etkileşime gir.');
+    this.wordText.style.fontSize = this.fontSizeFor(value.length);
+    this.entry.classList.add('hidden');
+    this.stage.classList.add('armed');
+    this.toolbar.classList.add('show');
+    this.stage.dataset.tool = this.currentToolId;
+    this.resetCombo();
+    this.clearWordVisuals();
+
+    this.tools[this.currentToolId].reset();
+    this.tools[this.currentToolId].activate();
+
+    this.wordText.classList.remove('materialize');
+    requestAnimationFrame(() => {
+      this.positionOverlays();
+      requestAnimationFrame(() => this.wordText.classList.add('materialize'));
+    });
+
+    setTimeout(() => this.wordText.focus({ preventScroll: true }), 500);
+  }
+
+  again(){
+    this.tools[this.currentToolId].deactivate();
+    this.aftermath.classList.remove('show');
+    this.input.value = '';
+    this.destroyBtn.disabled = true;
+    this.charcount.textContent = '0 / ' + this.MAX_CHARS;
+    this.charcount.classList.remove('limit');
+    this.wordText.classList.remove('materialize');
+    this.entry.classList.remove('hidden');
+    this.setHint('kelimeye tıkla');
+    renderSuggestions(this.suggestions, DESTROY_PROMPTS, this.input);
+    setTimeout(() => this.input.focus(), 350);
+  }
+
+  _bind(){
+    this.input.addEventListener('input', () => {
+      this.destroyBtn.disabled = this.input.value.trim().length === 0;
+      const len = this.input.value.length;
+      this.charcount.textContent = len + ' / ' + this.MAX_CHARS;
+      this.charcount.classList.toggle('limit', len >= this.MAX_CHARS - 20);
+    });
+
+    this.input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !this.destroyBtn.disabled){
+        e.preventDefault();
+        this.summon();
+        return;
+      }
+      if(e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter' || e.key === ' '){
+        this.playType();
+      }
+    });
+
+    this.destroyBtn.addEventListener('click', () => this.summon());
+    this.againBtn.addEventListener('click', () => this.again());
+    this.shareBtnDestroy.addEventListener('click', () => {
+      shareText(`Bugün ${Stats.destroyCount} zor anı yok ettim, ${Stats.nurtureCount} güzel şeyi yaşatıyorum. 🌑🌱`);
+    });
+
+    this.toolButtons.forEach(btn => {
+      btn.addEventListener('click', () => this.selectTool(btn.dataset.tool));
+    });
+
+    window.addEventListener('resize', () => this.positionOverlays());
+    this.wordText.addEventListener('transitionend', (e) => {
+      if(e.propertyName === 'transform') this.positionOverlays();
+    });
+
+    this.soundToggle.addEventListener('click', () => {
+      this.soundOn = !this.soundOn;
+      this.soundToggle.setAttribute('aria-pressed', String(this.soundOn));
+      this.soundToggle.setAttribute('aria-label', this.soundOn ? 'Sesi kapat' : 'Sesi aç');
+      this.soundIcon.innerHTML = this.soundOn
+        ? '<polygon points="4,9 8,9 13,4 13,20 8,15 4,15" fill="currentColor" stroke="none"/><path d="M16 8a5 5 0 0 1 0 8" /><path d="M19 5a9 9 0 0 1 0 14" />'
+        : '<polygon points="4,9 8,9 13,4 13,20 8,15 4,15" fill="currentColor" stroke="none"/><path d="M16 9l6 6M22 9l-6 6" />';
+    });
+  }
+}
+
+/* ============ Yaşat paneli ============ */
+
+class NurtureApp {
+  constructor(shared){
+    this.shared = shared;
+    this.entry = document.getElementById('nurtureEntry');
+    this.input = document.getElementById('nurtureInput');
+    this.btn = document.getElementById('nurtureBtn');
+    this.count = document.getElementById('nurtureCount');
+    this.stage = document.getElementById('nurtureStage');
+    this.word = document.getElementById('nurtureWord');
+    this.gardenEmpty = document.getElementById('gardenEmpty');
+    this.gardenList = document.getElementById('gardenList');
+    this.gardenShareBtn = document.getElementById('gardenShareBtn');
+    this.suggestions = document.getElementById('nurtureSuggestions');
+    this.MAX_CHARS = 240;
+    this.busy = false;
+    this.items = [];
+    this._bind();
+    renderSuggestions(this.suggestions, NURTURE_PROMPTS, this.input);
+  }
+
+  fontSizeFor(len){
+    if(len <= 12) return 'clamp(26px, 6.5vw, 56px)';
+    if(len <= 40) return 'clamp(20px, 5vw, 40px)';
+    if(len <= 100) return 'clamp(17px, 4vw, 30px)';
+    return 'clamp(14px, 3vw, 22px)';
+  }
+
+  plant(){
+    if(this.busy) return;
+    const value = this.input.value.trim();
+    if(!value) return;
+    this.busy = true;
+
+    this.word.textContent = value;
+    this.word.style.fontSize = this.fontSizeFor(value.length);
+    this.word.classList.remove('bloom');
+    this.entry.classList.add('hidden');
+
+    requestAnimationFrame(() => this.word.classList.add('bloom'));
+
+    this.shared.playChime();
+    this.shared.hapticPulse([10, 40, 10]);
+
+    setTimeout(() => {
+      const rect = this.word.getBoundingClientRect();
+      this.shared.spawnParticles(rect, {
+        count: 46, mode: 'rise',
+        colors: ['var(--life-bright)', 'var(--life)'],
+        minDist: 60, maxDist: 160, duration: 1500
+      });
+    }, 250);
+
+    setTimeout(() => {
+      this._addToGarden(value);
+      this.word.classList.remove('bloom');
+      this.word.textContent = '';
+      this.entry.classList.remove('hidden');
+      this.input.value = '';
+      this.btn.disabled = true;
+      this.count.textContent = '0 / ' + this.MAX_CHARS;
+      this.busy = false;
+      renderSuggestions(this.suggestions, NURTURE_PROMPTS, this.input);
+      setTimeout(() => this.input.focus(), 200);
+    }, 2000);
+  }
+
+  _addToGarden(text){
+    this.items.push(text);
+    this.gardenEmpty.style.display = 'none';
+    this.gardenShareBtn.hidden = false;
+
+    const chip = document.createElement('span');
+    chip.className = 'garden-chip';
+    chip.title = text;
+    const rot = (Math.random() * 12 - 6).toFixed(1);
+    chip.style.setProperty('--rot', rot + 'deg');
+
+    const label = document.createElement('span');
+    label.className = 'chip-text';
+    label.textContent = '🌱 ' + text;
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'chip-remove';
+    removeBtn.setAttribute('aria-label', 'Bahçeden kaldır');
+    removeBtn.textContent = '×';
+    removeBtn.addEventListener('click', () => {
+      const idx = this.items.indexOf(text);
+      if(idx > -1) this.items.splice(idx, 1);
+      chip.classList.add('removing');
+      setTimeout(() => {
+        chip.remove();
+        if(this.items.length === 0){
+          this.gardenEmpty.style.display = '';
+          this.gardenShareBtn.hidden = true;
+        }
+        Stats.setNurture(this.items.length);
+      }, 320);
+    });
+
+    chip.appendChild(label);
+    chip.appendChild(removeBtn);
+    this.gardenList.appendChild(chip);
+    this.gardenList.scrollTop = this.gardenList.scrollHeight;
+
+    Stats.setNurture(this.items.length);
+    if(MILESTONES.includes(this.items.length)){
+      this.shared.playChime();
+      this.shared.hapticPulse([10, 30, 10, 30, 10]);
+      showMilestoneToast('Bahçende artık ' + this.items.length + ' şey var 🌱');
+    }
+  }
+
+  _bind(){
+    this.input.addEventListener('input', () => {
+      this.btn.disabled = this.input.value.trim().length === 0;
+      const len = this.input.value.length;
+      this.count.textContent = len + ' / ' + this.MAX_CHARS;
+    });
+    this.input.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !this.btn.disabled){
+        e.preventDefault();
+        this.plant();
+        return;
+      }
+      if(e.key.length === 1 || e.key === 'Backspace' || e.key === 'Enter' || e.key === ' '){
+        this.shared.playType();
+      }
+    });
+    this.btn.addEventListener('click', () => this.plant());
+    this.gardenShareBtn.addEventListener('click', () => {
+      shareText(`Bugün ${Stats.destroyCount} zor anı yok ettim, ${Stats.nurtureCount} güzel şeyi yaşatıyorum. 🌑🌱`);
+    });
+  }
+}
+
+/* ============ Sekme yöneticisi ============ */
+
+class TabManager {
+  constructor(destroyApp, nurtureApp){
+    this.destroyApp = destroyApp;
+    this.nurtureApp = nurtureApp;
+    this.tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+    this.panels = { destroy: document.getElementById('panelDestroy'), nurture: document.getElementById('panelNurture') };
+    this.current = 'destroy';
+    this.tabButtons.forEach(btn => btn.addEventListener('click', () => this.switchTo(btn.dataset.panel)));
+  }
+  switchTo(id){
+    if(id === this.current) return;
+    if(this.destroyApp.busy || this.nurtureApp.busy) return;
+    this.panels[this.current].classList.remove('active');
+    this.panels[id].classList.add('active');
+    this.tabButtons.forEach(btn => {
+      const active = btn.dataset.panel === id;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+    this.current = id;
+  }
+}
+
+const destroyApp = new DestructionApp();
+const nurtureApp = new NurtureApp(destroyApp);
+/* ============ Gezen tatlı figür ============ */
+
+class WanderingCritter {
+  constructor(){
+    this.reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this._gradId = 0;
+    if(!this.reduceMotion) this._scheduleNext(this._randomDelay(1200, 3000));
+  }
+
+  _randomDelay(min, max){ return min + Math.random() * (max - min); }
+
+  _scheduleNext(delay){
+    setTimeout(() => this._crawl(), delay);
+  }
+
+  _crawl(){
+    this._gradId++;
+    const gradId = 'critterGrad' + this._gradId;
+
+    const el = document.createElement('div');
+    el.className = 'critter';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = `
+      <svg class="critter-body" viewBox="0 0 24 24">
+        <defs>
+          <linearGradient id="${gradId}" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fff6e8"/>
+            <stop offset="100%" stop-color="#c9bfa9"/>
+          </linearGradient>
+        </defs>
+        <path class="critter-fill" fill="url(#${gradId})" d="M12 3C7.58 3 4 6.58 4 11v8l2.3-2 2 2 2-2 2 2 2-2 2 2 2-2v-8c0-4.42-3.58-8-8-8z"/>
+        <g class="critter-eyes">
+          <circle class="critter-eye" cx="9" cy="11" r="1.3"/>
+          <circle class="critter-eye" cx="15" cy="11" r="1.3"/>
+        </g>
+        <ellipse class="critter-eye" cx="12" cy="14.6" rx="1" ry="1.2"/>
+      </svg>
+    `;
+    document.body.appendChild(el);
+
+    const vh = window.innerHeight, vw = window.innerWidth;
+    const fromLeft = Math.random() < 0.5;
+    const startX = fromLeft ? -70 : vw + 70;
+    const endX = fromLeft ? vw + 70 : -70;
+    const baseY = Math.min(vh - 150, Math.max(120, vh * (0.2 + Math.random() * 0.5)));
+    const amplitude = 50 + Math.random() * 110;
+    const frequency = 1 + Math.random() * 1.8;
+    const phase = Math.random() * Math.PI * 2;
+    const duration = 10 + Math.random() * 8;
+
+    let curX = startX, curY = baseY;
+    let startTime = null;
+    let fleeing = false, fleeStart = 0, fleeDur = 0, fleeFromX = 0, fleeFromY = 0, fleeToX = 0, fleeToY = 0;
+    let rafId = null;
+
+    const cleanup = () => {
+      if(rafId) cancelAnimationFrame(rafId);
+      if(el.parentNode) el.remove();
+      this._scheduleNext(this._randomDelay(1500, 4500));
+    };
+
+    const step = (now) => {
+      if(startTime === null) startTime = now;
+      if(!fleeing){
+        const elapsed = (now - startTime) / 1000;
+        const t = Math.min(1, elapsed / duration);
+        curX = startX + (endX - startX) * t;
+        curY = baseY
+          + amplitude * Math.sin(t * frequency * Math.PI * 2 + phase)
+          + 18 * Math.sin(t * 9 + phase * 1.7);
+        el.style.transform = `translate(${curX}px, ${curY}px)`;
+        if(t >= 1){ cleanup(); return; }
+      } else {
+        const ft = Math.min(1, (now - fleeStart) / (fleeDur * 1000));
+        curX = fleeFromX + (fleeToX - fleeFromX) * ft;
+        curY = fleeFromY + (fleeToY - fleeFromY) * ft;
+        el.style.transform = `translate(${curX}px, ${curY}px)`;
+        if(ft >= 1){ cleanup(); return; }
+      }
+      rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+
+    el.addEventListener('click', () => {
+      if(fleeing) return;
+      fleeing = true;
+      el.classList.add('startled');
+      fleeFromX = curX; fleeFromY = curY;
+      const goingRight = (endX - startX) > 0;
+      fleeToX = goingRight ? vw + 80 : -80;
+      fleeToY = curY - 40 - Math.random() * 60;
+      fleeDur = Math.max(1, Math.abs(fleeToX - fleeFromX) / 520);
+      fleeStart = performance.now();
+    });
+  }
+}
+
+new WanderingCritter();
+new TabManager(destroyApp, nurtureApp);
+
+if(Stats.cardBtn){
+  Stats.cardBtn.addEventListener('click', () => generateAndShareCard());
+}
+</script>
+
+</body>
+</html>
